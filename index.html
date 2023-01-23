@@ -1,0 +1,27 @@
+<button onclick="fetchNearestStop();">Fetch</button>
+<div id="status"></div>
+<script>
+    function fetchGTFSstatus() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "fetch.php", false);
+        xhr.send();
+        return xhr.responseText;
+    }
+    // a function that returns lat lon
+    function fetchNearestStop() {
+        var lat = 0;
+        var lon = 0;
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(fetchStopComparison);
+        } else {
+            return 0;
+        }
+    }
+    function fetchStopComparison(pos) {
+        console.log(pos);
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "neareststop.php?lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude, false);
+        xhr.send();
+        document.getElementById("status").innerHTML =  xhr.responseText;
+    }
+</script>
