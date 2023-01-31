@@ -1,8 +1,14 @@
 # Use an official PHP runtime as the base image
-FROM php:7.4-apache
+FROM --platform=linux/amd64 php:7.4-apache
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3-dev python3-pip
+
+#install tmux
+RUN apt-get install -y tmux
+
+#install sqlite3
+RUN apt-get install -y sqlite3
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -20,5 +26,7 @@ WORKDIR /var/www/html
 # Expose port 80
 EXPOSE 80
 
+RUN chmod +x startup.sh 
+
 # Run Apache2 in foreground
-ENTRYPOINT ["sh", "-c", "python3 gtfs.py && apache2-foreground"]
+ENTRYPOINT ["sh", "-c", "./startup.sh && apache2-foreground"]

@@ -1,5 +1,5 @@
 <button onclick="fetchNearestStop();">Fetch</button>
-<div id="status"></div>
+<pre style="width: 80%; margin-left: auto; margin-right: auto;" id="status"></pre>
 <script>
     function fetchGTFSstatus() {
         var xhr = new XMLHttpRequest();
@@ -18,10 +18,10 @@
         }
     }
     function fetchStopComparison(pos) {
-        console.log(pos);
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "neareststop.php?lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude, false);
+        xhr.open("GET", "neareststop.php?lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude + "&stations=3", false);
         xhr.send();
-        document.getElementById("status").innerHTML =  xhr.responseText;
+        // put the xhr response into the #status element, nicely formatted
+        document.getElementById("status").innerHTML = JSON.stringify(JSON.parse(xhr.responseText), null, 2);
     }
 </script>

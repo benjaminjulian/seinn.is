@@ -12,6 +12,10 @@ z.extractall()
 # import gtfs/stops.txt into a sqlite database
 conn = sqlite3.connect('gtfs.db')
 c = conn.cursor()
+
+c.execute('CREATE TABLE buses (time, lat, lon, head, fix, route, stop, next, code)')
+c.execute('CREATE TABLE logs (table_name, updated)')
+
 c.execute('CREATE TABLE stops (stop_id, stop_name, stop_lat, stop_lon, location_type)')
 with open('stops.txt') as f:
     skip = True
