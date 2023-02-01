@@ -144,4 +144,6 @@
 
     // return the json object
     echo json_encode($result);
+
+    //need to fix a lot!
 ?>
