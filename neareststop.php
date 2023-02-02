@@ -1,5 +1,6 @@
 <?php
-
+    // needs total revamping
+    
     date_default_timezone_set('UTC');
     function wkday() {
         // Get the current time in UTC
