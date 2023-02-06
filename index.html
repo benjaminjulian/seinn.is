@@ -1,27 +1,429 @@
-<button onclick="fetchNearestStop();">Fetch</button>
-<pre style="width: 80%; margin-left: auto; margin-right: auto;" id="status"></pre>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:description" content="Rauntímagögn um seinkanir á strætó" />
+<meta property="og:image" content="featured.png">
+<title>Er strætó seinn?</title>
+<link rel="stylesheet" href="buses.css">
+<style>
+* {
+  box-sizing: border-box;
+}
+
+.trip-name {
+    font-size: 20px;
+    margin-top: 10px;
+}
+
+.next-bus {
+    margin-left: 44px;
+    margin-top: -3px;
+}
+
+.loading {
+    font-style: italic;
+    color: #808080;
+    text-align: center;
+}
+
+.routenr {
+    display: inline-block;
+    width: 38px;
+    line-height: 33px;
+    height: 38px;
+    border-radius: 50%;
+    text-align: center;
+    padding: 0;
+    font-family: Arial;
+    font-weight: 100;
+    border: 3px solid transparent;
+}
+
+.trip-descriptor {
+    display: flex;
+    align-items: baseline;
+    position: relative;
+}
+
+.trip-descriptor > .scheduled-departure {
+    margin: 0;
+    position: absolute;
+    left: 44px;
+    top: 46px;
+    font-size: small;
+}
+
+.station {
+    font-weight: bold;
+}
+
+.time {
+    font-weight: bold;
+}
+
+fieldset {
+    border: 2px solid #d4cb88;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px;
+}
+
+.stop-name {
+    margin-top: 0px;
+    text-align: center;
+}
+
+legend {
+    font-size: small;
+}
+
+body {
+  font: 16px Arial;
+  text-align: center;
+}
+
+/*the container must be positioned relative:*/
+.autocomplete {
+  position: relative;
+  display: inline-block;
+}
+
+input {
+  border: 1px solid transparent;
+  background-color: #f1f1f1;
+  padding: 10px;
+  font-size: 16px;
+}
+
+input[type=text] {
+  background-color: #f1f1f1;
+  width: 100%;
+}
+
+input[type=submit] {
+  background-color: LightBlue;
+  color: #fff;
+  width: 100px;
+  padding: 10px;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff; 
+  border-bottom: 1px solid #d4d4d4; 
+}
+
+/*when hovering an item:*/
+.autocomplete-items div:hover {
+  background-color: #e9e9e9; 
+}
+
+/*when navigating through the items using the arrow keys:*/
+.autocomplete-active {
+  background-color: DodgerBlue !important; 
+  color: #ffffff; 
+}
+
+.logo {
+    background: url(logo.svg) no-repeat;
+    width: 52px;
+    height: 52px;
+    background-size: 100%;
+    display: inline-block;
+    vertical-align: middle;
+}
+img {
+    width: min(42px, 8vw);
+    height: min(42px, 8vw);
+    padding: 4px;
+    vertical-align: bottom;
+}
+#results {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: min(600px, 99vw);
+    text-align: left;
+}
+.result-text {
+    color: #808080;
+    width: min(300px, 50vw);
+    text-align: justify;
+    margin-left: auto;
+    margin-right: auto;
+}
+.minutes {
+    font-weight: bold;
+    font-size: 30px;
+    color: black;
+}
+.first-stop {
+    margin-left: auto;
+    margin-right: auto;
+}
+#daystatus {
+    margin-top: 20px;
+}
+</style>
+<body>
+    <h1><a class="logo" href="/"></a> Er strætó seinn?</h1>
+    <div id="content">
+        <form autocomplete="off">
+            <div class="first-stop" style="width: min(600px, 90vw);">
+                <img id="crosshairs" src="crosshairs.png" onclick="fetchByLocation(true)">
+                <div class="autocomplete" style="width: min(350px, 40vw);">
+                    <input id="station" type="text" placeholder="Stoppistöð">
+                </div>
+                <!--
+                <select name="stop" id="lines" onchange="search()">
+                    <option disabled selected>Leið</option>
+                </select>
+                -->
+            </div>
+            <input type="hidden" name="stop" id="stop">
+            <br>
+        </form>
+        <div id="results">
+        </div>
+    </div>
+    <script src="stops.js"></script>
+    <script src="names.js"></script>
+    <script src="autocomplete.js"></script>
 <script>
-    function fetchGTFSstatus() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "fetch.php", false);
-        xhr.send();
-        return xhr.responseText;
+    var station_count = 2;
+    autocomplete(document.getElementById("station"), names);
+    countdown();
+    var position;
+    var byPosition = false;
+    var byName = false;
+    var refreshHandle;
+    var xhrs = new Array();
+    var station_name = '';
+    freeze = false;
+
+    function abort_all_xhr(){
+        if (xhrs.length>0) {
+            for(var i=0; i<xhrs.length; i++){
+                xhrs[i].abort();
+            }
+            xhrs = [];
+        };
     }
-    // a function that returns lat lon
+
+    function setLoadingPlaceholder() {
+        document.getElementById("results").innerHTML = '<p class="loading">Sæki gögn...</p>';
+    }
+
+    function fetchByLocation(force=false) {
+        document.getElementById("crosshairs").src = "crosshairs.gif";
+        document.getElementById("station").value = "";
+        byPosition = true;
+        byName = false;
+        if (position && !force) {
+            refreshSearch();
+        } else {
+            abort_all_xhr();
+            setLoadingPlaceholder();
+            fetchNearestStop();
+        }
+    }
+
+    function fetchByName() {
+        station_name = document.getElementById("station").value;
+        byPosition = false;
+        byName = true;
+        abort_all_xhr();
+        setLoadingPlaceholder();
+        refreshSearch();
+    }
+
     function fetchNearestStop() {
-        var lat = 0;
-        var lon = 0;
+        byPosition = true;
+        byName = false;
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(fetchStopComparison);
+            setRefreshTimer();
         } else {
             return 0;
         }
     }
     function fetchStopComparison(pos) {
+        position = pos;
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "neareststop.php?lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude + "&stations=3", false);
+        xhrs.push(xhr);
+        xhr.open("GET", "neareststop.php?lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude + "&stations=" + station_count, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                data = JSON.parse(xhr.responseText);
+                printStops(data);
+            }
+        }
         xhr.send();
-        // put the xhr response into the #status element, nicely formatted
-        document.getElementById("status").innerHTML = JSON.stringify(JSON.parse(xhr.responseText), null, 2);
+    }
+    function setStation() {
+        var xhr = new XMLHttpRequest();
+        xhrs.push(xhr);
+        xhr.open("GET", "neareststop.php?stop=" + station_name, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                data = JSON.parse(xhr.responseText);
+                printStops(data);
+            }
+        }
+        xhr.send();
+    }
+    function formatTimeDifference(t, fall='nf') {
+        fall_min = {
+            'nf': 'mínútur',
+            'þf': 'mínútur',
+            'þgf': 'mínútum',
+            'ef': 'mínútna',
+        };
+        fall_klst = {
+            'nf': 'klukkustundir',
+            'þf': 'klukkustundir',
+            'þgf': 'klukkustundum',
+            'ef': 'klukkustunda',
+        };
+        if (t > 60*60) {
+            t_str = Math.floor(t/3600)+':'+('0'+Math.floor((t%3600)/60)).slice(-2) + " " + fall_klst[fall];
+        } else {
+            t_str = Math.floor(t/60)+':'+('0'+(t%60)).slice(-2) + " " + fall_min[fall];
+        }
+
+        return t_str;
+    }
+    function getTimeDifference(bustime, stoptime) {
+        var bus = new Date(bustime);
+        var stop = new Date(bustime.substr(0,11) + stoptime);
+        var diff = (bus - stop) / 1000;
+        return diff;
+    }
+    function printStops(data) {
+        legends = ['næsta stopp', 'þarnæsta stopp', 'þriðja næsta stopp'];
+        new_stops = [];
+        stop_count = data['stops'];
+        for (i = 1; i <= stop_count; i++) {
+            dontadd = false;
+            new_stop = document.createElement('fieldset');
+            new_stop.className = "stop";
+            new_stop.innerHTML = '<legend>' + legends[i-1] + '</legend>';
+            new_stop.innerHTML += '<h2 class="stop-name">' + data['stop_'+i].stop_name + '</h2>';
+            already_printed = [];
+            data['stop_'+i].trips.forEach(function(trip) {
+                trip_name = '<span class="routenr route-' + trip.route_short_name + '">' + trip.route_short_name + '</span> ' + trip.trip_headsign;
+                if (!already_printed.includes(trip_name)) {
+                    already_printed.push(trip_name);
+                    el_trip = document.createElement('div');
+                    el_trip.className = "trip";
+                    el_trip.innerHTML = '<div class="trip-descriptor"><h4 class="trip-name">' + trip_name + '</h4>' +
+                                        '<span class="scheduled-departure" data-departure="' + trip.departure_time + '"></span></div>';
+                    if (trip.next_bus) {
+                        add_text = '<p class="next-bus">';
+                        if (trip.next_bus.next_scheduled) {
+                            diff = getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.departure_time);
+                            if (Math.abs(diff) > 60*15) {
+                                dontadd = true;
+                            } else {
+                                add_text += 'Næsti strætó er á leið frá stoppinu <span class="station">' + stops[trip.next_bus.stop] + '</span> ';
+                                if (diff > 0) {
+                                    add_text += 'og er <span class="time">' + formatTimeDifference(diff, 'þgf') + '</span> á eftir áætlun. ';
+                                } else if (trip.next_bus.stop_scheduled) {
+                                    diff = getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time);
+                                    if (diff < 0) {
+                                        if (trip.next_bus.stop_scheduled.stop_sequence == "1") {
+                                            add_text += 'sem er upphaf leiðarinnar. ';
+                                        } else {
+                                            add_text += 'og er <span class="time">' + formatTimeDifference(-diff, 'þgf') + '</span> á undan áætlun. ';
+                                        }
+                                    } else {
+                                        add_text += 'á áætlun. ';
+                                    }
+                                } else {
+                                    add_text += 'á áætlun. ';
+                                }
+                            }
+                        } else {
+                            if (trip.next_bus.stop_scheduled) {
+                                if (trip.next_bus.stop_scheduled.stop_id == data['stop_'+i].stop_id) {
+                                    add_text += 'Næsti strætó er á stoppinu núna. ';
+                                } else {
+                                    add_text += 'Næsti strætó er á leið frá stoppinu <span class="station">' + stops[trip.next_bus.stop_scheduled.stop_id] + '</span>. ';
+                                    diff = getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time);
+                                    if (diff > 0) {
+                                        add_text += 'Hann átti að leggja af stað fyrir <span class="time">' + formatTimeDifference(diff, 'þgf') + '</span>. ';
+                                    }
+                                }
+                            } else {
+                                add_text += 'Strætóinn er að gefa frá sér einhver skrítin merki. ';
+                            }
+                        }
+                        add_text += '</p>';
+                        el_trip.innerHTML += add_text;
+                    } else {
+                        el_trip.innerHTML += '<p class="next-bus">Þessi strætó hefur ekki lagt af stað.</p>';
+                    }
+                    if (!dontadd)
+                        new_stop.appendChild(el_trip);
+                }
+            });
+
+            new_stops.push(new_stop);
+        }
+        document.getElementById("results").innerHTML = "";
+        // loop through new_stops and append elements to results
+        for (i = 0; i < new_stops.length; i++) {
+            document.getElementById("results").appendChild(new_stops[i]);
+        }
+        countdown(false);
+        document.getElementById("crosshairs").src = "crosshairs.png";
+        setRefreshTimer();
+    }
+    function formatHMS(t) {
+        var hms = t.split(':');
+        return parseInt(hms[0]).toString() + ':' + hms[1];
+    }
+    function countdown(loop=true) {
+        var now = new Date();
+        var scheduled = document.getElementsByClassName('scheduled-departure');
+        for (i = 0; i < scheduled.length; i++) {
+            datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
+            var departure = new Date(datestring + ' ' + scheduled[i].getAttribute('data-departure'));
+            var diff = Math.round((departure - now) / 1000);
+            if (diff > 0) {
+                scheduled[i].innerHTML = formatTimeDifference(diff) + " í áætlaða brottför kl. " + formatHMS(scheduled[i].getAttribute('data-departure'));
+            } else {
+                scheduled[i].innerHTML = 'Áætluð brottför var kl. ' + formatHMS(scheduled[i].getAttribute('data-departure')) + '.';
+            }
+        }
+        if (loop)
+            setTimeout(countdown, 1000);
+    }
+    function setRefreshTimer() {
+        clearTimeout(refreshHandle);
+        refreshHandle = setTimeout(refreshSearch, 10000);
+    }
+    function refreshSearch() {
+        if (!freeze) {
+            if (byPosition) {
+                fetchStopComparison(position);
+            }
+            if (byName) {
+                setStation();
+            }
+            setRefreshTimer();
+        }
     }
 </script>

@@ -4,9 +4,6 @@ FROM --platform=linux/amd64 php:7.4-apache
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3-dev python3-pip
 
-#install tmux
-RUN apt-get install -y tmux
-
 #install sqlite3
 RUN apt-get install -y sqlite3
 
