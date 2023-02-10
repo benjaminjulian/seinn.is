@@ -3,11 +3,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta property="og:description" content="Rauntímagögn um seinkanir á strætó" />
 <meta property="og:image" content="featured.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
 <title>Er strætó seinn?</title>
 <link rel="stylesheet" href="buses.css">
 <style>
 * {
   box-sizing: border-box;
+}
+
+.distance {
+    margin-left: 8px;
+    font-size: small;
+    color: gray;
 }
 
 .trip-name {
@@ -221,6 +234,33 @@ img {
             xhrs = [];
         };
     }
+    function distance(lat1, lon1, lat2, lon2) {
+        if ((lat1 == lat2) && (lon1 == lon2)) {
+            return 0;
+        }
+        else {
+            var radlat1 = Math.PI * lat1/180;
+            var radlat2 = Math.PI * lat2/180;
+            var theta = lon1-lon2;
+            var radtheta = Math.PI * theta/180;
+            var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+            if (dist > 1) {
+                dist = 1;
+            }
+            dist = Math.acos(dist);
+            dist = dist * 180/Math.PI;
+            dist = dist * 60 * 1.1515 * 1609.344;
+            return dist;
+        }
+    }
+
+    function formatDist(k) {
+        if (k < 1000) {
+            return Math.round(k) + " m";
+        } else {
+            return Math.round(k/100)/10 + " km";
+        }
+    }
 
     function setLoadingPlaceholder() {
         document.getElementById("results").innerHTML = '<p class="loading">Sæki gögn...</p>';
@@ -322,35 +362,57 @@ img {
             new_stop.innerHTML = '<legend>' + legends[i-1] + '</legend>';
             new_stop.innerHTML += '<h2 class="stop-name">' + data['stop_'+i].stop_name + '</h2>';
             already_printed = [];
+            data['stop_'+i].trips.sort(function (a, b) {
+                return a.departure_time.localeCompare(b.departure_time);
+            });
+            routes = [];
             data['stop_'+i].trips.forEach(function(trip) {
-                trip_name = '<span class="routenr route-' + trip.route_short_name + '">' + trip.route_short_name + '</span> ' + trip.trip_headsign;
+                delay_secs = 0;
+                route_rename = trip.route_short_name;
+                // if trip.route_id starts with 'RY.' or 'SA.', prefix 'R' or 'A' to route_rename
+                if (trip.route_id.substr(0,3) == 'RY.') {
+                    route_rename = 'R' + route_rename;
+                } else if (trip.route_id.substr(0,3) == 'SA.') {
+                    route_rename = 'A' + route_rename;
+                }
+                trip_name = '<span class="routenr route-' + route_rename + '">' + route_rename + '</span> ' + trip.trip_headsign;
                 if (!already_printed.includes(trip_name)) {
                     already_printed.push(trip_name);
                     el_trip = document.createElement('div');
                     el_trip.className = "trip";
-                    el_trip.innerHTML = '<div class="trip-descriptor"><h4 class="trip-name">' + trip_name + '</h4>' +
-                                        '<span class="scheduled-departure" data-departure="' + trip.departure_time + '"></span></div>';
+                    var dep_str = trip.departure_time;
                     if (trip.next_bus) {
+                        lat1 = 1.0*trip.next_bus.lat;
+                        lon1 = 1.0*trip.next_bus.lon;
+                        lat2 = 1.0*data['stop_'+i].stop_lat;
+                        lon2 = 1.0*data['stop_'+i].stop_lon;
+                        bus_distance = distance(lat1,lon1,lat2,lon2);
+
                         add_text = '<p class="next-bus">';
                         if (trip.next_bus.next_scheduled) {
                             diff = getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.departure_time);
-                            if (Math.abs(diff) > 60*15) {
-                                dontadd = true;
+                            if (trip.next_bus.next == data['stop_'+i].stop_id) {
+                                add_text += 'Næsti strætó er á leið að þessu stoppi ';
                             } else {
-                                add_text += 'Næsti strætó er á leið frá stoppinu <span class="station">' + stops[trip.next_bus.stop] + '</span> ';
-                                if (diff > 0) {
-                                    add_text += 'og er <span class="time">' + formatTimeDifference(diff, 'þgf') + '</span> á eftir áætlun. ';
-                                } else if (trip.next_bus.stop_scheduled) {
-                                    diff = getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time);
-                                    if (diff < 0) {
-                                        if (trip.next_bus.stop_scheduled.stop_sequence == "1") {
-                                            add_text += 'sem er upphaf leiðarinnar. ';
-                                        } else {
-                                            add_text += 'og er <span class="time">' + formatTimeDifference(-diff, 'þgf') + '</span> á undan áætlun. ';
-                                        }
+                                add_text += 'Næsti strætó er á leið að stoppinu <span class="station">' + stops[trip.next_bus.next] + '</span> ';
+                            }
+                            if (diff > 0) {
+                                delay_secs = diff;
+                                add_text += 'og er <span class="time">' + formatTimeDifference(diff, 'þgf') + '</span> á eftir áætlun. ';
+                            } else if (trip.next_bus.stop_scheduled) {
+                                diff = getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time);
+                                if (diff < 0) {
+                                    if (trip.next_bus.stop_scheduled.stop_sequence == "1") {
+                                        add_text += 'frá upphafi leiðarinnar. ';
                                     } else {
-                                        add_text += 'á áætlun. ';
+                                        add_text += 'og er <span class="time">' + formatTimeDifference(-diff, 'þgf') + '</span> á undan áætlun. ';
                                     }
+                                } else {
+                                    add_text += 'á áætlun. ';
+                                }
+                            } else {
+                                if (trip.next_bus.next_scheduled.stop_sequence == "1") {
+                                    add_text += 'sem er upphaf leiðarinnar. ';
                                 } else {
                                     add_text += 'á áætlun. ';
                                 }
@@ -358,9 +420,25 @@ img {
                         } else {
                             if (trip.next_bus.stop_scheduled) {
                                 if (trip.next_bus.stop_scheduled.stop_id == data['stop_'+i].stop_id) {
-                                    add_text += 'Næsti strætó er á stoppinu núna. ';
+                                    if (trip.next_bus.stop_scheduled.stop_sequence == "1") {
+                                        if (bus_distance < 50) {
+                                            add_text += 'Strætóinn bíður hér, á upphafi leiðarinnar.';
+                                        } else {
+                                            add_text += 'Strætó er að fara héðan, frá upphafi leiðarinnar.';
+                                        }
+                                    } else {
+                                        if (bus_distance < 50) {
+                                            add_text += "Strætóinn bíður hjá stoppinu.";
+                                        } else {
+                                            add_text += 'Strætóinn er á leiðinni héðan á stoppið <span class="station">' + stops[trip.next_bus.next] + '</span>. ';
+                                        }
+                                    }
                                 } else {
-                                    add_text += 'Næsti strætó er á leið frá stoppinu <span class="station">' + stops[trip.next_bus.stop_scheduled.stop_id] + '</span>. ';
+                                    if (trip.next_bus.stop_scheduled.stop_sequence == "1") {
+                                        add_text += 'Strætóinn er á upphafi leiðarinnar. ';
+                                    } else {
+                                        add_text += 'Strætóinn er á leiðinni frá stoppinu <span class="station">' + stops[trip.next_bus.stop_scheduled.stop_id] + '</span>. ';
+                                    }
                                     diff = getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time);
                                     if (diff > 0) {
                                         add_text += 'Hann átti að leggja af stað fyrir <span class="time">' + formatTimeDifference(diff, 'þgf') + '</span>. ';
@@ -370,14 +448,32 @@ img {
                                 add_text += 'Strætóinn er að gefa frá sér einhver skrítin merki. ';
                             }
                         }
+
                         add_text += '</p>';
+
+                        var now = new Date();
+                        var datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
+                        var departure = new Date(datestring + ' ' + trip.departure_time);
+                        var prev_departure = new Date(datestring + ' ' + trip.preceding_trip.departure_time);
+                        if (prev_departure / 1000 + delay_secs + 30 > now/1000) {
+                            dep_str = trip.preceding_trip.departure_time;
+                        }
+                        
+                        el_trip.innerHTML = '<div class="trip-descriptor" data-sorter="' + dep_str + '"><h4 class="trip-name">' + trip_name + '<span class="distance" id="trip' + trip.trip_id + '">(' + formatDist(bus_distance) + ')</span></h4>' +
+                                            '<span class="scheduled-departure" data-departure="' + dep_str + '" delay="' + delay_secs + '"></span></div>';
                         el_trip.innerHTML += add_text;
                     } else {
-                        el_trip.innerHTML += '<p class="next-bus">Þessi strætó hefur ekki lagt af stað.</p>';
+                        //el_trip.innerHTML += '<p class="next-bus">Þessi strætó hefur ekki lagt af stað.</p>';
                     }
                     if (!dontadd)
-                        new_stop.appendChild(el_trip);
+                        routes.push([dep_str, el_trip]);
                 }
+            });
+            sorted_routes = routes.sort(function(a, b) {
+                return a[0] > b[0];
+            });
+            sorted_routes.forEach(function(route) {
+                new_stop.appendChild(route[1]);
             });
 
             new_stops.push(new_stop);

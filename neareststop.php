@@ -1,5 +1,4 @@
 <?php
-    error_reporting(E_ERROR | E_PARSE);
     require("functions.php");
     $db = new PDO('sqlite:gtfs.db');
     $now = new DateTime();
@@ -7,7 +6,7 @@
     // get the difference between the current time and the last update time in seconds
     $diff = $now->getTimestamp() - $updated->getTimestamp();
 
-    if ($diff > 10) {
+    if ($diff > 11) {
         $t1 = microtime(true);
         $command = escapeshellcmd('python3 scrape.py');
         $output = shell_exec($command);
@@ -42,12 +41,29 @@
     foreach ($stops as $stop_num => $stop) {
         $trips = getStopTrips($db, $stop['stop_id']);
         $entries = array();
-        
+        $used_trips = array();
+        $trips_found = array();
+
+        $now = new DateTime();
+        $now_string = $now->format('H:i:s');
+
         foreach ($trips as $trip) {
-            $nearestBus = getNextBusLocation($db, $trip['route_short_name'], $trip['stop_sequence'], $trip['trip_id']);
-            $trip['next_bus'] = $nearestBus;
-            $entry = $trip;
-            $entries[] = $entry;
+            $route_sign = $trip['route_short_name'].$trip['trip_headsign'];
+            $rename_trip = $trip['route_short_name'];
+
+            if (substr($trip['route_id'], 0, 3) == 'RY.') {
+                $rename_trip = 'R'.$rename_trip;
+            } else if (substr($trip['route_id'], 0, 3) == 'SA.') {
+                $rename_trip = 'A'.$rename_trip;
+            }
+            if (!in_array($route_sign, $trips_found)) {
+                $nearestBus = getNextBusLocation($db, $rename_trip, $trip['stop_sequence'], $trip['trip_id']);
+                $trip['next_bus'] = $nearestBus;
+                $entry = $trip;
+                $entries[] = $entry;
+            } else {
+                $trips_found[] = $route_sign;
+            }
         }
         $result[$stop_num]['trips'] = $entries;
     }

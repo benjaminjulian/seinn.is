@@ -26,6 +26,7 @@ c.execute('CREATE TABLE buses (time, lat, lon, head, fix, route, stop, next, cod
 c.execute('CREATE TABLE logs (table_name, updated)')
 
 c.execute('CREATE TABLE stops (stop_id, stop_name, stop_lat, stop_lon, location_type)')
+c.execute('CREATE INDEX idx_stops ON stops (stop_id, stop_name)')
 with open('stops.txt') as f:
     with open('stops.js', 'a') as j:
         names_used = []
@@ -47,6 +48,7 @@ with open('stops.txt') as f:
 
 # import gtfs/trips.txt into a sqlite database
 c.execute('CREATE TABLE trips (route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, block_id, shape_id)')
+c.execute('CREATE INDEX idx_trips ON trips (trip_id, route_id)')
 with open('trips.txt') as f:
     skip = True
     for line in f:
@@ -56,6 +58,7 @@ with open('trips.txt') as f:
 
 # import gtfs/stop_times.txt into a sqlite database
 c.execute('CREATE TABLE stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence INT, stop_headsign, pickup_type)')
+c.execute('CREATE INDEX idx_times ON stop_times (trip_id, arrival_time, departure_time, stop_id)')
 with open('stop_times.txt') as f:
     skip = True
     for line in f:
@@ -65,12 +68,18 @@ with open('stop_times.txt') as f:
 
 # import gtfs/routes.txt into a sqlite database
 c.execute('CREATE TABLE routes (route_id, agency_id, route_short_name, route_long_name, route_type)')
+c.execute('CREATE INDEX idx_routes ON routes (route_id)')
 with open('routes.txt') as f:
     skip = True
     for line in f:
         if not skip:
             c.execute('INSERT INTO routes VALUES (?,?,?,?,?)', line.strip().split(','))
         skip = False
+
+# cleanup
+
+c.execute('UPDATE stop_times SET arrival_time = CASE WHEN substr(arrival_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(arrival_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(arrival_time, 3) ELSE arrival_time END;')
+c.execute('UPDATE stop_times SET departure_time = CASE WHEN substr(departure_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(departure_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(departure_time, 3) ELSE departure_time END;')
 
 conn.commit()
 conn.close()

@@ -2,3 +2,4 @@ gtfs.db
 stops.js
 names.js
 *.txt
+debugging.php
