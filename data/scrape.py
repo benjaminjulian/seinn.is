@@ -17,7 +17,7 @@ def importBuses():
 
     buses = tree.findall('bus')
 
-    conn = sqlite3.connect('gtfs.db')
+    conn = sqlite3.connect('../gtfs.db')
     c = conn.cursor()
 
     # insert current UTC time into the logs table

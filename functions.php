@@ -7,19 +7,9 @@
         // Subtract four hours from the current time
         $four_hours_ago = $now->sub(new DateInterval('PT5H'));
         // Get the name of the day (Monday, Tuesday, etc.)
-        $day_name = $four_hours_ago->format('l');
-        // Capitalize the first letter of the day name
-        $capitalized_day_name = ucfirst($day_name);
-        #return first letter of $capitalized_day_name
-        $capitalized_day_name = substr($capitalized_day_name, 0, 1);
+        $day_num = (int) $four_hours_ago->format('N');
 
-        if ($day_name === 'Saturday'){
-            $capitalized_day_name =  '-'.$capitalized_day_name.'-';
-        }else if ($day_name === 'Sunday') {
-            $capitalized_day_name =  '------'.$capitalized_day_name;
-        }
-
-        return $capitalized_day_name;
+        return $day_num;
     }
 
     function readBusTime($t) {
@@ -91,6 +81,17 @@
         return $result;
     }
 
+    function getServiceIds($db, $date) {
+        $q = "SELECT service_id FROM calendar_dates WHERE date = '$date' AND exception_type = '1'";
+        $results = $db->query($q);
+        $result = array();
+        foreach ($results as $row) {
+            $service_id = $row['service_id'];
+            $result[] = $service_id;
+        }
+        return $result;
+    }
+
     function getStopTrips($db, $stop_id) {
         $result = [];
         $weekday = wkday();
@@ -99,10 +100,14 @@
         $now->modify("-31 minutes");
         $now_string = $now->format('H:i:s');
         $today_string = $now->format('Ymd');
+        $now->modify("-5 hours");
+        $today_string_early = $now->format('Ymd');
 
         $preceding_trip = array();
-        
-        $q_trips_info = "SELECT trips.route_id, routes.route_short_name, trips.trip_id, trips.trip_headsign, stop_times.arrival_time, stop_times.departure_time, stop_times.stop_sequence FROM stop_times JOIN trips ON stop_times.trip_id = trips.trip_id JOIN routes ON trips.route_id = routes.route_id WHERE stop_times.stop_id = '$stop_id' AND trips.service_id LIKE '%$weekday%' AND stop_times.departure_time > '$now_string' AND trips.service_id <= '$today_string' ORDER BY trips.service_id DESC, stop_times.arrival_time ASC LIMIT 50";
+
+        $service_ids = getServiceIds($db, $today_string_early);
+        $q_trips_info = "SELECT trips.route_id, routes.route_short_name, trips.trip_id, trips.trip_headsign, stop_times.arrival_time, stop_times.departure_time, stop_times.stop_sequence FROM stop_times JOIN trips ON stop_times.trip_id = trips.trip_id JOIN routes ON trips.route_id = routes.route_id WHERE stop_times.stop_id = '$stop_id' AND service_id IN ('".implode("','", $service_ids)."') AND stop_times.departure_time > '$now_string' ORDER BY stop_times.arrival_time ASC LIMIT 50";
+
         $results = $db->query($q_trips_info);
         $done = array();
         foreach ($results as $row) {
@@ -184,7 +189,9 @@
         $all_trips = getRouteOtherTrips($db, $trip_id);
 
         $t = substr($time, 0, 11);
-        $q = "SELECT arrival_time, departure_time, ABS(strftime('%s', '$time') - strftime('%s', '$t' || departure_time)) as diff FROM stop_times WHERE stop_id = '$stop_id' AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
+        $now = new DateTime();
+        $today_string = $now->format('Y-m-d ');
+        $q = "SELECT arrival_time, departure_time, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time)) as diff FROM stop_times WHERE stop_id = '$stop_id' AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
 
         $results = $db->query($q);
         $result = array();

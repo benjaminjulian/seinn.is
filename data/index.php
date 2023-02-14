@@ -1,12 +1,12 @@
 <?php
-    require("functions.php");
-    $db = new PDO('sqlite:gtfs.db');
+    require("../functions.php");
+    $db = new PDO('sqlite:../gtfs.db');
     $now = new DateTime();
     $updated = new DateTime(getUpdateTime($db));
     // get the difference between the current time and the last update time in seconds
     $diff = $now->getTimestamp() - $updated->getTimestamp();
 
-    if ($diff > 11) {
+    if ($diff > 9) {
         $t1 = microtime(true);
         $command = escapeshellcmd('python3 scrape.py');
         $output = shell_exec($command);

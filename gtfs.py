@@ -31,24 +31,28 @@ with open('stops.txt') as f:
     with open('stops.js', 'a') as j:
         names_used = []
         with open('names.js', 'a') as n:
-            skip = True
-            for line in f:
-                if skip:
-                    skip = False
-                    j.write('var stops = {')
-                    n.write('var names = [')
-                else:
-                    j.write('"' + line.strip().split(',')[0] + '": "' + line.strip().split(',')[1] + '",')
-                    if not line.strip().split(',')[1] in names_used:
-                        n.write('"' + line.strip().split(',')[1] + '",');
-                        names_used.append(line.strip().split(',')[1])
-                    c.execute('INSERT INTO stops VALUES (?,?,?,?,?)', line.strip().split(','))
+            with open('locations.js', 'a') as l:
+                skip = True
+                for line in f:
+                    if skip:
+                        skip = False
+                        j.write('var stops = {')
+                        n.write('var names = [')
+                        l.write('var locations = {')
+                    else:
+                        j.write('"' + line.strip().split(',')[0] + '": "' + line.strip().split(',')[1] + '",')
+                        l.write('"' + line.strip().split(',')[0] + '": [' + line.strip().split(',')[2] + ', ' + line.strip().split(',')[3] + '],')
+                        if not line.strip().split(',')[1] in names_used:
+                            n.write('"' + line.strip().split(',')[1] + '",');
+                            names_used.append(line.strip().split(',')[1])
+                        c.execute('INSERT INTO stops VALUES (?,?,?,?,?)', line.strip().split(','))
+                l.write('}')
             n.write('];')
         j.write('};')
 
 # import gtfs/trips.txt into a sqlite database
 c.execute('CREATE TABLE trips (route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, block_id, shape_id)')
-c.execute('CREATE INDEX idx_trips ON trips (trip_id, route_id)')
+c.execute('CREATE INDEX idx_trips ON trips (trip_id, route_id, service_id)')
 with open('trips.txt') as f:
     skip = True
     for line in f:
@@ -74,6 +78,16 @@ with open('routes.txt') as f:
     for line in f:
         if not skip:
             c.execute('INSERT INTO routes VALUES (?,?,?,?,?)', line.strip().split(','))
+        skip = False
+
+# import gtfs/calendar_dates.txt into a sqlite database
+c.execute('CREATE TABLE calendar_dates (service_id, date, exception_type)')
+c.execute('CREATE INDEX idx_dates ON calendar_dates (service_id, date)')
+with open('calendar_dates.txt') as f:
+    skip = True
+    for line in f:
+        if not skip:
+            c.execute('INSERT INTO calendar_dates VALUES (?,?,?)', line.strip().split(','))
         skip = False
 
 # cleanup
