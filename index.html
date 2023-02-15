@@ -391,6 +391,7 @@ img {
                     el_trip = document.createElement('div');
                     el_trip.className = "trip";
                     var dep_str = trip.departure_time;
+                    bus_distance = -1;
                     if (trip.next_bus) {
                         lat1 = 1.0*trip.next_bus.lat;
                         lon1 = 1.0*trip.next_bus.lon;
@@ -488,19 +489,32 @@ img {
                         }
 
                         add_text += '</p>';
-
-                        var now = new Date();
-                        var datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
-                        var departure = new Date(datestring + ' ' + trip.departure_time);
-                        var prev_departure = new Date(datestring + ' ' + trip.preceding_trip.departure_time);
-                        if (prev_departure / 1000 + delay_secs + 30 > now/1000) {
-                            dep_str = trip.preceding_trip.departure_time;
+                    } else {
+                        if (trip.stop_sequence == "1") {
+                            add_text = '<p class="next-bus">Þetta er fyrsta stopp leiðarinnar.</p>';
+                        } else {
+                            add_text = '<p class="next-bus">Strætó er ekki lagður af stað.</p>';
                         }
-                        
-                        el_trip.innerHTML = '<div class="trip-descriptor" data-sorter="' + dep_str + '"><h4 class="trip-name">' + trip_name + '<span class="distance" id="trip' + trip.trip_id + '">(' + formatDist(bus_distance) + ')</span></h4>' +
-                                            '<span class="scheduled-departure" data-departure="' + dep_str + '" delay="' + delay_secs + '"></span></div>';
-                        el_trip.innerHTML += add_text;
                     }
+
+                    var now = new Date();
+                    var datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
+                    var departure = new Date(datestring + ' ' + trip.departure_time);
+                    var prev_departure = new Date(datestring + ' ' + trip.preceding_trip.departure_time);
+                    if (prev_departure / 1000 + delay_secs + 30 > now/1000) {
+                        dep_str = trip.preceding_trip.departure_time;
+                    }
+
+                    if (bus_distance >= 0) {
+                        dist_text = ' (' + formatDist(bus_distance) + ')';
+                    } else {
+                        dist_text = '';
+                    }
+                    
+                    el_trip.innerHTML = '<div class="trip-descriptor" data-sorter="' + dep_str + '"><h4 class="trip-name">' + trip_name + '<span class="distance" id="trip' + trip.trip_id + '">' + dist_text + '</span></h4>' +
+                                        '<span class="scheduled-departure" data-departure="' + dep_str + '" delay="' + delay_secs + '"></span></div>';
+                    el_trip.innerHTML += add_text;
+                    
                     if (!dontadd)
                         routes.push([dep_str, el_trip]);
                 }
