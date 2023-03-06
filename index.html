@@ -350,7 +350,7 @@ img {
     }
     function getTimeDifference(bustime, stoptime) {
         var bus = new Date(bustime);
-        var stop = new Date(bustime.substr(0,11) + stoptime);
+        var stop = mkDT(bustime.substr(0,11), stoptime);
         var diff = (bus - stop) / 1000;
         return diff;
     }
@@ -363,6 +363,17 @@ img {
     }
     function stopHTML(stop_id) {
         return '<span class="station">' + stops[stop_id] + '</span>';
+    }
+    function mkDT(date, time) {
+        hr = parseInt(time.substr(0,2));
+        date_add = 0;
+        if (hr > 23) {
+            date_add = 1;
+            hr %= 24;
+        }
+        dt = new Date(date.substr(0,4), date.substr(5,2)-1, date.substr(8,2), hr, time.substr(3,2), time.substr(6,2));
+        dt.setDate(dt.getDate() + date_add);
+        return dt;
     }
     function printStops(data) {
         min_dist = 50;
@@ -497,12 +508,14 @@ img {
                         }
                     }
 
-                    var now = new Date();
-                    var datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
-                    var departure = new Date(datestring + ' ' + trip.departure_time);
-                    var prev_departure = new Date(datestring + ' ' + trip.preceding_trip.departure_time);
-                    if (prev_departure / 1000 + delay_secs + 30 > now/1000) {
-                        dep_str = trip.preceding_trip.departure_time;
+                    if (trip.preceding_trip) {
+                        var now = new Date();
+                        var datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
+                        var departure = mkDT(datestring, trip.departure_time);
+                        var prev_departure = mkDT(datestring, trip.preceding_trip.departure_time);
+                        if (prev_departure / 1000 + delay_secs + 30 > now/1000) {
+                            dep_str = trip.preceding_trip.departure_time;
+                        }
                     }
 
                     if (bus_distance >= 0) {
@@ -539,6 +552,9 @@ img {
     }
     function formatHMS(t) {
         var hms = t.split(':');
+        if (hms[0] > '23') {
+            hms[0] = ''+(hms[0]-24);
+        }
         return parseInt(hms[0]).toString() + ':' + hms[1];
     }
     function countdown(loop=true) {
@@ -546,7 +562,7 @@ img {
         var scheduled = document.getElementsByClassName('scheduled-departure');
         for (i = 0; i < scheduled.length; i++) {
             datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
-            var departure = new Date(datestring + ' ' + scheduled[i].getAttribute('data-departure'));
+            var departure = mkDT(datestring, scheduled[i].getAttribute('data-departure'));
             var diff = Math.round((departure - now) / 1000);
             if (diff > 0) {
                 scheduled[i].innerHTML = formatTimeDifference(diff) + " í áætlaða brottför kl. " + formatHMS(scheduled[i].getAttribute('data-departure'));

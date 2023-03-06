@@ -92,14 +92,21 @@
         return $result;
     }
 
+    function getUnmodString($t) {
+        $h = (int) $t->format('H');
+        if ($h < 5) {
+            $h = $h + 24;
+        }
+        $now_string = sprintf("%02d", $h).$t->format(':i:s');
+        return $now_string;
+    }
+
     function getStopTrips($db, $stop_id) {
         $result = [];
-        $weekday = wkday();
         $now = new DateTime();
         $now_pre_string = $now->format('H:i:s');
         $now->modify("-31 minutes");
-        $now_string = $now->format('H:i:s');
-        $today_string = $now->format('Ymd');
+        $now_string = getUnmodString($now);
         $now->modify("-5 hours");
         $today_string_early = $now->format('Ymd');
 
@@ -127,7 +134,8 @@
                 'arrival_time' => $arrival_time,
                 'departure_time' => $departure_time,
                 'stop_sequence' => $stop_sequence,
-                'preceding_trip' => false
+                'preceding_trip' => false,
+                't_check' => $now_string
             );
             
             if ($departure_time >= $now_pre_string) {
@@ -191,14 +199,14 @@
         $t = substr($time, 0, 11);
         $now = new DateTime();
         $today_string = $now->format('Y-m-d ');
-        $q = "SELECT arrival_time, departure_time, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time)) as diff FROM stop_times WHERE stop_id = '$stop_id' AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
+        $q = "SELECT arrival_time_mod, departure_time_mod, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time_mod)) as diff FROM stop_times WHERE stop_id = '$stop_id' AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
 
         $results = $db->query($q);
         $result = array();
         $entry = false;
         foreach ($results as $row) {
-            $arrival_time = $row['arrival_time'];
-            $departure_time = $row['departure_time'];
+            $arrival_time = $row['arrival_time_mod'];
+            $departure_time = $row['departure_time_mod'];
             $entry = array(
                 'stop_id' => $stop_id,
                 'stop_sequence' => $stop_sequence,

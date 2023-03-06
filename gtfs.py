@@ -61,13 +61,16 @@ with open('trips.txt') as f:
         skip = False
 
 # import gtfs/stop_times.txt into a sqlite database
-c.execute('CREATE TABLE stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence INT, stop_headsign, pickup_type)')
+c.execute('CREATE TABLE stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence INT, stop_headsign, pickup_type, arrival_time_mod, departure_time_mod)')
 c.execute('CREATE INDEX idx_times ON stop_times (trip_id, arrival_time, departure_time, stop_id)')
 with open('stop_times.txt') as f:
     skip = True
     for line in f:
         if not skip:
-            c.execute('INSERT INTO stop_times VALUES (?,?,?,?,?,?,?)', line.strip().split(','))
+            insert = line.strip().split(',')
+            insert.append(insert[1])
+            insert.append(insert[2])
+            c.execute('INSERT INTO stop_times VALUES (?,?,?,?,?,?,?,?,?)', insert)
         skip = False
 
 # import gtfs/routes.txt into a sqlite database
@@ -92,8 +95,8 @@ with open('calendar_dates.txt') as f:
 
 # cleanup
 
-c.execute('UPDATE stop_times SET arrival_time = CASE WHEN substr(arrival_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(arrival_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(arrival_time, 3) ELSE arrival_time END;')
-c.execute('UPDATE stop_times SET departure_time = CASE WHEN substr(departure_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(departure_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(departure_time, 3) ELSE departure_time END;')
+c.execute('UPDATE stop_times SET arrival_time_mod = CASE WHEN substr(arrival_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(arrival_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(arrival_time, 3) ELSE arrival_time END;')
+c.execute('UPDATE stop_times SET departure_time_mod = CASE WHEN substr(departure_time, 0, 3) >= "24" THEN "0" || CAST((CAST(substr(departure_time, 0, 3) AS INTEGER) - 24) AS TEXT) || substr(departure_time, 3) ELSE departure_time END;')
 
 conn.commit()
 conn.close()
