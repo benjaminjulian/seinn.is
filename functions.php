@@ -134,8 +134,7 @@
                 'arrival_time' => $arrival_time,
                 'departure_time' => $departure_time,
                 'stop_sequence' => $stop_sequence,
-                'preceding_trip' => false,
-                't_check' => $now_string
+                'preceding_trip' => false
             );
             
             if ($departure_time >= $now_pre_string) {
@@ -292,3 +291,4 @@
         }
         return $time;
     }
+?>

@@ -1,5 +1,6 @@
 <?php
     require("../functions.php");
+    header('Content-type: application/json');
     $db = new PDO('sqlite:../gtfs.db');
     $now = new DateTime();
     $updated = new DateTime(getUpdateTime($db));
