@@ -220,7 +220,7 @@
     function getNextBusLocation($db, $route, $stop_sequence, $trip_id) {
         $previous_stops = getPrecedingTrip($db, $stop_sequence, $trip_id);
 
-        $q = "SELECT buses.time, lat, lon, buses.stop, buses.next FROM buses WHERE buses.route = '$route'";
+        $q = "SELECT buses.time, lat, lon, buses.stop, buses.next, code FROM buses WHERE buses.route = '$route'";
         $results = $db->query($q);
         $result = false;
         $possible_results = array();
@@ -231,6 +231,7 @@
                 $lon = $row['lon'];
                 $stop = $row['stop'];
                 $next = $row['next'];
+                $code = $row['code'];
                 $prev_schedule = false;
                 $next_schedule = false;
 
@@ -248,7 +249,8 @@
                     'stop' => $stop,
                     'next' => $next,
                     "stop_scheduled" => $prev_schedule,
-                    "next_scheduled" => $next_schedule
+                    "next_scheduled" => $next_schedule,
+                    "code" => $code
                 );
                 $possible_results[] = $entry;
             }

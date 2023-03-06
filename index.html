@@ -420,6 +420,7 @@ img {
                         prev_stop_same = false;
                         at_first = false;
                         going_from_here = false;
+                        bus_turned_off = (trip.next_bus.code == "4");
 
                         delay_secs = 0;
 
@@ -429,8 +430,11 @@ img {
                             next_stop_lat = locations[trip.next_bus.next_scheduled.stop_id][0];
                             next_stop_lon = locations[trip.next_bus.next_scheduled.stop_id][1];
                             next_stop_distance = distance(lat1,lon1,next_stop_lat,next_stop_lon);
-                            next_diff = getSmallerDiff(getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.arrival_time), getTimeDifference(trip.next_bus.time, trip.preceding_trip.arrival_time));
-
+                            if (trip.preceding_trip) {
+                                next_diff = getSmallerDiff(getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.arrival_time), getTimeDifference(trip.next_bus.time, trip.preceding_trip.arrival_time));
+                            } else {
+                                next_diff = getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.arrival_time);
+                            }
                             if (trip.next_bus.next_scheduled.stop_id == data['stop_'+i].stop_id) {
                                 next_stop_same = true;
                             }
@@ -449,8 +453,11 @@ img {
                             prev_stop_lat = locations[trip.next_bus.stop_scheduled.stop_id][0];
                             prev_stop_lon = locations[trip.next_bus.stop_scheduled.stop_id][1];
                             prev_stop_distance = distance(lat1,lon1,prev_stop_lat,prev_stop_lon);
-                            prev_diff = getSmallerDiff(getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time), getTimeDifference(trip.next_bus.time, trip.preceding_trip.departure_time));
-
+                            if (trip.preceding_trip) {
+                                prev_diff = getSmallerDiff(getTimeDifference(trip.next_bus.time, trip.next_bus.stop_scheduled.departure_time), getTimeDifference(trip.next_bus.time, trip.preceding_trip.departure_time));
+                            } else {
+                                prev_diff = getTimeDifference(trip.next_bus.time, trip.next_bus.next_scheduled.arrival_time);
+                            }
                             if (trip.next_bus.stop == data['stop_'+i].stop_id) {
                                 prev_stop_same = true;
                             }
