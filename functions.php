@@ -1,17 +1,6 @@
 <?php
     date_default_timezone_set('UTC');
 
-    function wkday() {
-        // Get the current time in UTC
-        $now = new DateTime();
-        // Subtract four hours from the current time
-        $four_hours_ago = $now->sub(new DateInterval('PT5H'));
-        // Get the name of the day (Monday, Tuesday, etc.)
-        $day_num = (int) $four_hours_ago->format('N');
-
-        return $day_num;
-    }
-
     function readBusTime($t) {
         // convert the format YYMMDDHHMMSS to YYYY-MM-DD HH:MM:SS
         $year = substr($t, 0, 2);
@@ -113,7 +102,7 @@
         $preceding_trip = array();
 
         $service_ids = getServiceIds($db, $today_string_early);
-        $q_trips_info = "SELECT trips.route_id, routes.route_short_name, trips.trip_id, trips.trip_headsign, stop_times.arrival_time, stop_times.departure_time, stop_times.stop_sequence FROM stop_times JOIN trips ON stop_times.trip_id = trips.trip_id JOIN routes ON trips.route_id = routes.route_id WHERE stop_times.stop_id = '$stop_id' AND service_id IN ('".implode("','", $service_ids)."') AND stop_times.departure_time > '$now_string' ORDER BY stop_times.arrival_time ASC LIMIT 50";
+        $q_trips_info = "SELECT trips.route_id, routes.route_short_name, trips.trip_id, trips.trip_headsign, stop_times.arrival_time, stop_times.departure_time, stop_times.stop_sequence FROM stop_times JOIN trips ON stop_times.trip_id = trips.trip_id JOIN routes ON trips.route_id = routes.route_id WHERE stop_times.stop_id = $stop_id AND service_id IN ('".implode("','", $service_ids)."') AND stop_times.departure_time > '$now_string' ORDER BY stop_times.arrival_time ASC LIMIT 50";
 
         $results = $db->query($q_trips_info);
         $done = array();
@@ -156,7 +145,7 @@
     }
 
     function getPrecedingTrip($db, $stop_sequence, $trip_id) {
-        $q = "SELECT arrival_time, departure_time, stop_id, stop_sequence FROM stop_times WHERE stop_sequence <= $stop_sequence AND trip_id = '$trip_id' ORDER BY stop_sequence DESC";
+        $q = "SELECT arrival_time, departure_time, stop_id, stop_sequence FROM stop_times WHERE stop_sequence <= $stop_sequence AND trip_id = $trip_id ORDER BY stop_sequence DESC";
         $results = $db->query($q);
         $result = array();
         foreach ($results as $row) {
@@ -176,7 +165,7 @@
     }
 
     function getRouteOtherTrips($db, $trip) {
-        $q = "SELECT service_id, route_id, trip_id FROM trips WHERE trip_id = '$trip'";
+        $q = "SELECT service_id, route_id, trip_id FROM trips WHERE trip_id = $trip";
         $results = $db->query($q);
         $result = array();
         foreach ($results as $row) {
@@ -198,7 +187,7 @@
         $t = substr($time, 0, 11);
         $now = new DateTime();
         $today_string = $now->format('Y-m-d ');
-        $q = "SELECT arrival_time_mod, departure_time_mod, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time_mod)) as diff FROM stop_times WHERE stop_id = '$stop_id' AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
+        $q = "SELECT arrival_time_mod, departure_time_mod, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time_mod)) as diff FROM stop_times WHERE stop_id = $stop_id AND trip_id IN (".implode(",", $all_trips).") AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
 
         $results = $db->query($q);
         $result = array();
@@ -221,7 +210,6 @@
 
         $q = "SELECT buses.time, lat, lon, buses.stop, buses.next, code FROM buses WHERE buses.route = '$route'";
         $results = $db->query($q);
-        $result = false;
         $possible_results = array();
         foreach ($results as $row) {
             if (array_key_exists($row['stop'], $previous_stops) || array_key_exists($row['next'], $previous_stops)) {

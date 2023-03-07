@@ -120,6 +120,13 @@ function formatTimeDifference(t, fall='nf') {
 function getTimeDifference(bustime, stoptime) {
     var bus = new Date(bustime);
     var stop = mkDT(bustime.substr(0,11), stoptime);
+    if (bus.getHours() == 23 && stop.getHours() < 5) {
+        // set stop to the day after
+        stop.setDate(stop.getDate() + 1);
+    } else if (bus.getHours() < 5 && stop.getHours() == 23) {
+        // set stop to the day before
+        stop.setDate(stop.getDate() - 1);
+    }
     var diff = (bus - stop) / 1000;
     return diff;
 }
@@ -370,8 +377,15 @@ function countdown(loop=true) {
     var now = new Date();
     var scheduled = document.getElementsByClassName('scheduled-departure');
     for (i = 0; i < scheduled.length; i++) {
+        const fiveHoursAgo = new Date(now.getTime() - (5 * 60 * 60 * 1000)); // subtract 5 hours in milliseconds
+        datestringFHA = fiveHoursAgo.getFullYear() + '-' + ('0'+(fiveHoursAgo.getMonth()+1)).slice(-2) + '-' + ('0'+fiveHoursAgo.getDate()).slice(-2);
         datestring = now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
-        var departure = mkDT(datestring, scheduled[i].getAttribute('data-departure'));
+        if (now.getHours() < 5) {
+            var departure = mkDT(datestringFHA, scheduled[i].getAttribute('data-departure'));
+        } else {
+            var departure = mkDT(datestring, scheduled[i].getAttribute('data-departure'));
+        }
+        
         var diff = Math.round((departure - now) / 1000);
         if (diff > 0) {
             scheduled[i].innerHTML = formatTimeDifference(diff) + " í áætlaða brottför kl. " + formatHMS(scheduled[i].getAttribute('data-departure'));
