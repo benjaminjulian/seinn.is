@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="styling/buses.css">
 <link rel="stylesheet" href="styling/styles.css">
 <body>
-    <h1><a class="logo" href="/"></a> Er strætó seinn?</h1>
+    <h1><a class="logo" href="/"></a> <span id="title-text">Er strætó seinn?</span></h1>
     <div id="content">
         <form autocomplete="off">
             <div class="first-stop" style="width: min(600px, 90vw);">
@@ -39,7 +39,8 @@
     <script src="names.js"></script>
     <script src="locations.js"></script>
     <script src="autocomplete.js"></script>
-    <script src="functions.js?v=2"></script>
+    <script src="translate.js"></script>
+    <script src="functions.js?v=3"></script>
 <script>
     var station_count = 2;
     autocomplete(document.getElementById("station"), names);
@@ -50,5 +51,10 @@
     var refreshHandle;
     var xhrs = new Array();
     var station_name = '';
+    lang = 'is';
+    if (localStorage.getItem('lang') == 'pl' || location.hash == '#pl') {
+        lang = 'pl';
+        translatePage();
+    }
     freeze = false;
 </script>

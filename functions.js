@@ -1,3 +1,8 @@
+function translatePage() {
+    document.getElementById("station").placeholder = txt('Stoppistöð');
+    document.getElementById("title-text").innerHTML = txt('Er strætó seinn?');
+}
+
 function abort_all_xhr(){
     if (xhrs.length>0) {
         for(var i=0; i<xhrs.length; i++){
@@ -35,7 +40,7 @@ function formatDist(k) {
 }
 
 function setLoadingPlaceholder() {
-    document.getElementById("results").innerHTML = '<p class="loading">Sæki gögn...</p>';
+    document.getElementById("results").innerHTML = txt('<p class="loading">Sæki gögn...</p>');
 }
 
 function fetchByLocation(force=false) {
@@ -98,16 +103,16 @@ function setStation() {
 }
 function formatTimeDifference(t, fall='nf') {
     fall_min = {
-        'nf': 'mínútur',
-        'þf': 'mínútur',
-        'þgf': 'mínútum',
-        'ef': 'mínútna',
+        'nf': txt('mínútur'),
+        'þf': txt('mínútur'),
+        'þgf': txt('mínútum'),
+        'ef': txt('mínútna'),
     };
     fall_klst = {
-        'nf': 'klukkustundir',
-        'þf': 'klukkustundir',
-        'þgf': 'klukkustundum',
-        'ef': 'klukkustunda',
+        'nf': txt('klukkustundir'),
+        'þf': txt('klukkustundir'),
+        'þgf': txt('klukkustundum'),
+        'ef': txt('klukkustunda'),
     };
     if (t > 60*60) {
         t_str = Math.floor(t/3600)+':'+('0'+Math.floor((t%3600)/60)).slice(-2) + " " + fall_klst[fall];
@@ -262,47 +267,47 @@ function printStops(data) {
 
                     if (next_stop_same) {
                         if (next_stop_close) {
-                            add_text += 'Strætó er kominn. ';
+                            add_text += txt('Strætó er kominn. ');
                         } else {
                             if (at_first) {
                                 if (bus_turned_off) {
-                                    add_text += 'Strætóinn er í bið við upphaf leiðarinnar. ';
+                                    add_text += txt('Strætóinn er í bið við upphaf leiðarinnar. ');
                                 } else {
-                                    add_text += 'Strætóinn er á fyrsta stoppi leiðarinnar. ';
+                                    add_text += txt('Strætóinn er á fyrsta stoppi leiðarinnar. ');
                                 }
                             } else {
-                                add_text += 'Næsta stopp vagnsins er hér. ';
+                                add_text += txt('Næsta stopp vagnsins er hér. ');
                             }
                         }
                     } else if (prev_stop_same) {
                         if (bus_turned_off) {
-                            add_text += 'Strætó er í bið hérna. ';
+                            add_text += txt('Strætó er í bið hérna. ');
                         } else {
                             if (prev_stop_close) {
-                                add_text += 'Strætó er að leggja af stað héðan. ';
+                                add_text += txt('Strætó er að leggja af stað héðan. ');
                             } else {
-                                add_text += 'Strætó er á leiðinni héðan á stoppið ' + stopHTML(trip.next_bus.next) + '. ';
+                                add_text += txt('Strætó er á leiðinni héðan á stoppið ') + stopHTML(trip.next_bus.next) + '. ';
                                 going_from_here = true;
                             }
                         }
                     } else {
                         if (next_stop_close || bus_turned_off) {
                             if (at_first) {
-                                add_text += 'Strætóinn er á fyrsta stoppi leiðarinnar, ';
+                                add_text += txt('Strætóinn er á fyrsta stoppi leiðarinnar, ');
                             } else {
-                                add_text += 'Strætóinn er á stoppinu ';
+                                add_text += txt('Strætóinn er á stoppinu ');
                             }
                             add_text += stopHTML(trip.next_bus.stop);
                         } else if (prev_stop_close || bus_turned_off) {
-                            add_text += 'Strætóinn er á stoppinu ' + stopHTML(trip.next_bus.stop);
+                            add_text += txt('Strætóinn er á stoppinu ') + stopHTML(trip.next_bus.stop);
                         } else if (trip.next_bus.next_scheduled) {
-                            add_text += 'Strætóinn er á leiðinni á stoppið ' + stopHTML(trip.next_bus.next);
+                            add_text += txt('Strætóinn er á leiðinni á stoppið ') + stopHTML(trip.next_bus.next);
                         } else {
-                            add_text += 'Strætóinn er á leiðinni frá stoppinu ' + stopHTML(trip.next_bus.stop);
+                            add_text += txt('Strætóinn er á leiðinni frá stoppinu ') + stopHTML(trip.next_bus.stop);
                         }
 
                         if (sequence_diff >= 1) {
-                            add_text += ', ' + singularPlural(sequence_diff, 'stoppi', 'stoppum') + ' frá. ';
+                            add_text += ', ' + singularPlural(sequence_diff, txt('stoppi'), txt('stoppum')) + txt(' frá. ');
                         } else {
                             add_text += '. ';
                         }
@@ -310,18 +315,18 @@ function printStops(data) {
 
                     if (!bus_turned_off) {
                         if (late && next_diff < 1800) {
-                            add_text += 'Hann er <span class="time">' + formatTimeDifference(next_diff, 'þgf') + '</span> á eftir áætlun. ';
+                            add_text += txt('Hann er <span class="time">') + formatTimeDifference(next_diff, 'þgf') + txt('</span> á eftir áætlun. ');
                         } else if (early && !at_first) {
-                            add_text += 'Hann er <span class="time">' + formatTimeDifference(-prev_diff, 'þgf') + '</span> á undan áætlun. ';
+                            add_text += txt('Hann er <span class="time">') + formatTimeDifference(-prev_diff, 'þgf') + txt('</span> á undan áætlun. ');
                         }
                     } else {
-                        add_text += '(Það er slökkt á honum.) ';
+                        add_text += txt('(Það er slökkt á honum.) ');
                     }
                     
 
                     add_text += '</p>';
                 } else {
-                    add_text = '<p class="next-bus">Strætó er ekki lagður af stað.</p>';
+                    add_text = txt('<p class="next-bus">Strætó er ekki lagður af stað.</p>');
                 }
 
                 if (trip.preceding_trip) {
@@ -388,9 +393,9 @@ function countdown(loop=true) {
         
         var diff = Math.round((departure - now) / 1000);
         if (diff > 0) {
-            scheduled[i].innerHTML = formatTimeDifference(diff) + " í áætlaða brottför kl. " + formatHMS(scheduled[i].getAttribute('data-departure'));
+            scheduled[i].innerHTML = formatTimeDifference(diff) + txt(" í áætlaða brottför kl. ") + formatHMS(scheduled[i].getAttribute('data-departure'));
         } else {
-            scheduled[i].innerHTML = 'Áætluð brottför var kl. ' + formatHMS(scheduled[i].getAttribute('data-departure')) + '.';
+            scheduled[i].innerHTML = txt('Áætluð brottför var kl. ') + formatHMS(scheduled[i].getAttribute('data-departure')) + '.';
         }
     }
     if (loop)
