@@ -18,6 +18,8 @@ def importBuses():
     buses = tree.findall('bus')
 
     conn = sqlite3.connect('../gtfs.db')
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     c = conn.cursor()
 
     # insert current UTC time into the logs table

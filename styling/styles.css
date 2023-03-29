@@ -175,3 +175,16 @@
   #daystatus {
       margin-top: 20px;
   }
+  #banner {
+      color: darkgray;
+      text-align: center;
+      font-style: italic;
+  }
+  #banner > hr {
+    width: 50%;
+  }
+  #pl-btn {
+    font-size: large;
+    margin-left: auto;
+    margin-right: auto;
+  }

@@ -33,7 +33,8 @@ txt_translations = {
         '<p class="next-bus">Strætó er ekki lagður af stað.</p>': '<p class="next-bus">Autobus nie jest w trakcie jazdy.</p>',
         ' í áætlaða brottför kl. ': ' w planowanym czasie jazdy o ',
         'Áætluð brottför var kl. ': 'Planowana jazda miała miejsce o ',
-        '<p class="loading">Sæki gögn...</p>' : '<p class="loading">Pobieranie danych...</p>',
+        '<p class="loading">Sæki gögn...</p>': '<p class="loading">Pobieranie danych...</p>',
+        'Ekki í netsambandi?<br>Sendu SMS með staðsetningu<br>á <a href="tel:6323514">6323514</a> og fáðu sjálfvirkt svar.': 'Brak połączenia z internetem?<br>Wyślij SMS z adresem<br>na <a href="tel:6323514">6323514</a> i otrzymasz odpowiedź.',
     }
 };
 

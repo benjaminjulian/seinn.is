@@ -66,6 +66,7 @@
         $already_printed = array();
         $time_sensitivity = 20;
         $routes = "";
+        $prefix = "";
         for ($i = 1; $i <= 2; $i++) {
             $trips = $data['stop_' . $i]['trips'];
             if ($routes !== "")
@@ -86,7 +87,7 @@
                 if (!in_array($trip_name, $already_printed)) {
                     array_push($already_printed, $trip_name);
 
-                    if (isset($trip['next_bus'])) {
+                    if ($trip['next_bus']) {
                         $late = false;
                         $early = false;
                         $next_stop_same = false;
@@ -151,7 +152,7 @@
                             if ($bus_turned_off) {
                                 $add_text .= 'Kominn hingað. ';
                             } else {
-                                $add_text .= 'Að fara héðan.';
+                                $add_text .= 'Að fara héðan. ';
                             }
                         } else {
                             if ($sequence_diff >= 1) {
@@ -160,7 +161,7 @@
                         }
                         
                         if (!$bus_turned_off) {
-                            if ($late && $next_diff < 1800) {
+                            if ($late && $next_diff < 1700) {
                                 $add_text .= formatTimeDifference($next_diff, 'þgf') . ' á eftir áætlun. ';
                             } else if ($early && !$at_first) {
                                 $add_text .= formatTimeDifference(-$prev_diff, 'þgf') . ' á undan áætlun. ';

@@ -1,6 +1,8 @@
 function translatePage() {
     document.getElementById("station").placeholder = txt('Stoppistöð');
     document.getElementById("title-text").innerHTML = txt('Er strætó seinn?');
+    document.getElementById('banner').innerHTML = txt('Ekki í netsambandi?<br>Sendu SMS með staðsetningu<br>á <a href="tel:6323514">6323514</a> og fáðu sjálfvirkt svar.');
+    document.title = txt('Er strætó seinn?');
 }
 
 function abort_all_xhr(){

@@ -23,7 +23,7 @@ WORKDIR /var/www/html
 # Expose port 80
 EXPOSE 80
 
-RUN chmod +x startup.sh 
+RUN chmod +x startup.sh
 
 # Run Apache2 in foreground
 ENTRYPOINT ["sh", "-c", "./startup.sh && apache2-foreground"]

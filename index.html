@@ -18,7 +18,7 @@
 <meta name="theme-color" content="#ffffff">
 <title>Er strætó seinn?</title>
 <link rel="stylesheet" href="styling/buses.css">
-<link rel="stylesheet" href="styling/styles.css">
+<link rel="stylesheet" href="styling/styles.css?v=2">
 <body>
     <h1><a class="logo" href="/"></a> <span id="title-text">Er strætó seinn?</span></h1>
     <div id="content">
@@ -33,6 +33,12 @@
             <br>
         </form>
         <div id="results">
+            <p id="banner">
+                <button id="pl-btn" onclick="location.hash='pl';location.reload();">Polski</button><br><br>
+                Ekki í netsambandi?<br>
+                Sendu SMS með staðsetningu<br>
+                á <a href="tel:6323514">6323514</a> og fáðu sjálfvirkt svar.
+            </p>
         </div>
     </div>
     <script src="stops.js"></script>
@@ -51,7 +57,7 @@
     var refreshHandle;
     var xhrs = new Array();
     var station_name = '';
-    lang = 'is';
+    var lang = 'is';
     if (localStorage.getItem('lang') == 'pl' || location.hash == '#pl') {
         lang = 'pl';
         translatePage();
