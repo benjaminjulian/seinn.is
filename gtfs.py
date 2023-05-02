@@ -7,6 +7,7 @@ import os
 # download a zip file and extract it
 url = 'https://opendata.straeto.is/data/gtfs/gtfs.zip'
 r = requests.get(url)
+print('fetched gtfs.zip, status', r.status_code)
 z = zipfile.ZipFile(io.BytesIO(r.content))
 extracted = z.namelist()
 z.extractall()

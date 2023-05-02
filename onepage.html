@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<meta property="og:description" content="Rauntímagögn um seinkanir á strætó" />
+<meta property="og:image" content="styling/featured.png">
+<link rel="apple-touch-icon" sizes="180x180" href="styling/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="styling/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="styling/favicon-16x16.png">
+<link rel="manifest" href="styling/site.webmanifest">
+<link rel="mask-icon" href="styling/safari-pinned-tab.svg">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+<meta charset="utf-8" />
+<title>Seinn.is</title>
+<link rel="stylesheet" href="styling/buses.css">
+<link rel="stylesheet" href="styling/styles.css?v=2">
+<body>
+    <h1><a class="logo" href="/"></a> <span id="title-text">Hvar er strætó?</span></h1>
+    <div id="content">
+        <form autocomplete="off">
+            <div class="first-stop" style="width: min(600px, 90vw);">
+                <img id="crosshairs" src="styling/crosshairs.png" onclick="fetchByLocation(true)">
+                <div class="autocomplete" style="width: min(350px, 40vw);">
+                    <input id="station" type="text" placeholder="Stoppistöð">
+                </div>
+            </div>
+            <input type="hidden" name="stop" id="stop">
+            <br>
+        </form>
+        <div id="results" style="height: 200px;">
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <link href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" rel="stylesheet"/>
+        <script>
+// Where you want to render the map.
+var element = document.getElementById('results');
+
+// Height has to be set. You can do this in CSS too.
+element.style = 'height:300px;';
+
+// Create Leaflet map on map element.
+var map = L.map(element);
+
+// Add OSM tile layer to the Leaflet map.
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: ''
+}).addTo(map);
+
+// Target's GPS coordinates.
+
+
+// Set map's center to target with zoom 14.
+map.setView(L.latLng('64.12', '-21.9'), 14);
+
+// Place a marker on the same location.
+
+        var buses = JSON.parse('{}');
+
+        function addMarker(lon, lat) {
+            var target = L.latLng(lat, lon);
+            L.marker(target).addTo(map);
+        }
+
+        function printBus() {
+            xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://data01.straeto.is/data/dyn-data/vagnar-all.json", true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    buses = JSON.parse(xhr.responseText);
+                    //loop through buses.leidir 
+                    for (var i = 0; i < buses.leidir.length; i++) {
+                        var bus = buses.leidir[i];
+                        if (bus.leid == "1") {
+                            // loop through bus.ferlar
+                            for (var j = 0; j < bus.ferlar.length; j++) {
+                                var ferill = bus.ferlar[j];
+                                if (ferill.lat !== null) {
+                                    addMarker(ferill.lon, ferill.lat);
+                                    console.log(ferill.lat, ferill.lon);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            xhr.send();
+        }
+    </script>
+</body>
+</html>
