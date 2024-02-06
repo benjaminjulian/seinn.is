@@ -94,10 +94,7 @@ with open('calendar_dates.txt') as f_txt:
     for line in f:
         c.execute('INSERT INTO calendar_dates VALUES (?,?,?)', (line['service_id'], line['date'], line['exception_type'],))
 
-with open('calendar.txt') as f_txt:
-    f = csv.DictReader(f_txt)
-    for line in f:
-        c.
+
 # cleanup
 
 print('Rewriting some data...')
