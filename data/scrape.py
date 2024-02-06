@@ -23,8 +23,9 @@ def importBuses():
     c = conn.cursor()
 
     # insert current UTC time into the logs table
-    c.execute('INSERT INTO logs VALUES (?,?)', ('buses', datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')))
     c.execute('DELETE FROM buses WHERE 1')
+    c.execute('DELETE FROM logs WHERE 1')
+    c.execute('INSERT INTO logs VALUES (?,?)', ('buses', datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')))
 
     for bus in buses:
         b = bus.attrib
