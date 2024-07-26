@@ -5,3 +5,4 @@ names.js
 straeto_link.py
 credentials.php
 *.log
+.DS_Store
