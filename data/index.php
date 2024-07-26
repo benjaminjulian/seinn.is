@@ -27,11 +27,12 @@
             $lat = 64.1353;
             $lon = -21.8952;
         }
-        if (is_numeric($_GET['stations'])) {
+        if (isset($_GET['stations']) && is_numeric($_GET['stations'])) {
             $stations = (int) $_GET['stations'];
         } else {
             $stations = 2;
         }
+        $stations = min($stations, 5);
         $stops = getNearestStops($db, $lat, $lon, $stations);
     } else if (isset($_GET['stop'])) {
         $stops = getStopsByName($db, $_GET['stop']);
@@ -58,6 +59,7 @@
                 $rename_trip = 'A'.$rename_trip;
             }
             if (!in_array($route_sign, $trips_found)) {
+                $trip['debug_nearest_bus'] = array("rename_trip" => $rename_trip, "stop_sequence" => $trip['stop_sequence'], "trip_id" => $trip['trip_id']);
                 $nearestBus = getNextBusLocation($db, $rename_trip, $trip['stop_sequence'], $trip['trip_id']);
                 $trip['next_bus'] = $nearestBus;
                 $entry = $trip;
