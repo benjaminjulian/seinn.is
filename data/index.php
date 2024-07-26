@@ -36,8 +36,13 @@
         $stops = getNearestStops($db, $lat, $lon, $stations);
     } else if (isset($_GET['stop'])) {
         $stops = getStopsByName($db, $_GET['stop']);
+    } else {
+        // kill with bad request error
+        $result = array("error" => "Notaðu lat-lon-stations (fjöldi) eða stop (nafn) stika.");
+        echo json_encode($result, JSON_PRETTY_PRINT);
+        die();
     }
-
+    
     $result = $stops;
 
     foreach ($stops as $stop_num => $stop) {
