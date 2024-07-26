@@ -94,6 +94,13 @@ with open('calendar_dates.txt') as f_txt:
     for line in f:
         c.execute('INSERT INTO calendar_dates VALUES (?,?,?)', (line['service_id'], line['date'], line['exception_type'],))
 
+c.execute('CREATE TABLE calendar (service_id TEXT, monday INT, tuesday INT, wednesday INT, thursday INT, friday INT, saturday INT, sunday INT, start_date TEXT, end_date TEXT)')
+c.execute('CREATE INDEX idx_dates_calendar ON calendar (service_id, start_date, end_date)')
+if (os.path.exists('calendar.txt')):
+    with open('calendar.txt') as f_txt:
+        f = csv.DictReader(f_txt)
+        for line in f:
+            c.execute('INSERT INTO calendar VALUES(?,?,?,?,?,?,?,?,?,?)', (line['service_id'], line['monday'], line['tuesday'], line['wednesday'], line['thursday'], line['friday'], line['saturday'], line['sunday'], line['start_date'], line['end_date'],))
 
 # cleanup
 

@@ -68,12 +68,29 @@
     }
 
     function getServiceIds($db, $date) {
-        $q = "SELECT service_id FROM calendar_dates WHERE date = '$date' AND exception_type = '1'";
+        $date_obj = DateTime::createFromFormat('Ymd', $date);
+        $day = strtolower($date_obj->format('l'));
+        $q = "SELECT service_id FROM calendar WHERE '$date' BETWEEN start_date AND end_date AND $day";
         $results = $db->query($q);
         $result = array();
         foreach ($results as $row) {
             $service_id = $row['service_id'];
             $result[] = $service_id;
+        }
+        // remove or add calendar_dates exceptions
+        $q = "SELECT service_id, exception_type FROM calendar_dates WHERE date = '$date'";
+        $results = $db->query($q);
+        foreach ($results as $row) {
+            $service_id = $row['service_id'];
+            $exception_type = $row['exception_type'];
+            if ($exception_type == 1) {
+                $result[] = $service_id;
+            } else if ($exception_type == 2) {
+                $key = array_search($service_id, $result);
+                if ($key !== false) {
+                    unset($result[$key]);
+                }
+            }
         }
         return $result;
     }
@@ -142,7 +159,7 @@
     }
 
     function getPrecedingTrip($db, $stop_sequence, $trip_id) {
-        $q = "SELECT arrival_time, departure_time, stop_id, stop_sequence FROM stop_times WHERE stop_sequence <= $stop_sequence AND trip_id = $trip_id ORDER BY stop_sequence DESC";
+        $q = "SELECT arrival_time, departure_time, stop_id, stop_sequence FROM stop_times WHERE stop_sequence <= $stop_sequence AND trip_id = '$trip_id' ORDER BY stop_sequence DESC";
         $results = $db->query($q);
         $result = array();
         foreach ($results as $row) {
@@ -162,7 +179,7 @@
     }
 
     function getRouteOtherTrips($db, $trip) {
-        $q = "SELECT service_id, route_id, trip_id FROM trips WHERE trip_id = $trip";
+        $q = "SELECT service_id, route_id, trip_id FROM trips WHERE trip_id = '$trip'";
         $results = $db->query($q);
         $result = array();
         foreach ($results as $row) {
@@ -184,7 +201,7 @@
         $t = substr($time, 0, 11);
         $now = new DateTime();
         $today_string = $now->format('Y-m-d ');
-        $q = "SELECT arrival_time_mod, departure_time_mod, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time_mod)) as diff FROM stop_times WHERE stop_id = $stop_id AND trip_id IN (".implode(",", $all_trips).") AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
+        $q = "SELECT arrival_time_mod, departure_time_mod, ABS(strftime('%s', '$time') - strftime('%s', '$today_string' || departure_time_mod)) as diff FROM stop_times WHERE stop_id = $stop_id AND trip_id IN ('".implode("','", $all_trips)."') AND stop_sequence = $stop_sequence ORDER BY diff ASC LIMIT 1";
 
         $results = $db->query($q);
         $entry = false;
